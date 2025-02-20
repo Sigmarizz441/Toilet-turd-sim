@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Toilet Turd Collector</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Toilet Turd Collector</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <p>Score: <span id="score">0</span> | Misses: <span id="misses">0</span> (Max 20)</p>
+    <p>Use ← and → arrow keys to move the toilet!</p>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const missesDisplay = document.getElementById('misses');
+
+        // Game variables
+        let score = 0;
+        let misses = 0;
+        const maxMisses = 20; // Changed from 5 to 20
+        const toiletWidth = 60;
+        const toiletHeight = 40;
+        let toiletX = canvas.width / 2 - toiletWidth / 2;
+        const toiletSpeed = 5;
+        let turds = [];
+        const turdSize = 20;
+        const turdSpeed = 3;
+
+        // Toilet movement
+        let leftPressed = false;
+        let rightPressed = false;
+
+        // Event listeners for key presses
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') leftPressed = true;
+            if (e.key === 'ArrowRight') rightPressed = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') leftPressed = false;
+            if (e.key === 'ArrowRight') rightPressed = false;
+        });
+
+        // Turd class
+        class Turd {
+            constructor() {
+                this.x = Math.random() * (canvas.width - turdSize);
+                this.y = -turdSize;
+            }
+            fall() {
+                this.y += turdSpeed;
+            }
+            draw() {
+                ctx.fillStyle = 'brown';
+                ctx.beginPath();
+                ctx.arc(this.x + turdSize / 2, this.y + turdSize / 2, turdSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Spawn new turds
+        function spawnTurd() {
+            if (Math.random() < 0.02) { // Adjust spawn rate
+                turds.push(new Turd());
+            }
+        }
+
+        // Move toilet
+        function moveToilet() {
+            if (leftPressed && toiletX > 0) {
+                toiletX -= toiletSpeed;
+            }
+            if (rightPressed && toiletX < canvas.width - toiletWidth) {
+                toiletX += toiletSpeed;
+            }
+        }
+
+        // Draw toilet
+        function drawToilet() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(toiletX, canvas.height - toiletHeight, toiletWidth, toiletHeight);
+            ctx.fillStyle = 'blue'; // Water in toilet
+            ctx.fillRect(toiletX + 10, canvas.height - toiletHeight + 10, toiletWidth - 20, toiletHeight - 20);
+        }
+
+        // Collision detection
+        function checkCollisions() {
+            turds = turds.filter(turd => {
+                if (turd.y + turdSize >= canvas.height - toiletHeight &&
+                    turd.x + turdSize >= toiletX &&
+                    turd.x <= toiletX + toiletWidth) {
+                    score++;
+                    scoreDisplay.textContent = score;
+                    return false; // Remove turd
+                }
+                if (turd.y > canvas.height) {
+                    misses++;
+                    missesDisplay.textContent = misses;
+                    return false; // Remove turd
+                }
+                return true; // Keep turd
+            });
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (misses >= maxMisses) {
+                ctx.fillStyle = 'red';
+                ctx.font = '30px Arial';
+                ctx.fillText('Game Over! Score: ' + score, canvas.width / 2 - 120, canvas.height / 2);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            moveToilet();
+            drawToilet();
+            spawnTurd();
+
+            turds.forEach(turd => {
+                turd.fall();
+                turd.draw();
+            });
+
+            checkCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
